@@ -9,15 +9,20 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Arrays;
 
 import static android.R.attr.button;
 import static android.R.attr.id;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity Class";
+    private static final int RC_SIGN_IN = 1;
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
@@ -33,12 +38,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mAuth.addAuthStateListener(mAuthListener);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (mAuthListener == null) {
+            //TODO: Move to onPause?
             mAuth.removeAuthStateListener(mAuthListener);
         }
     }
+
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,9 +74,19 @@ public class MainActivity extends AppCompatActivity {
                 if (user != null) {
                     // User is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                    Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
                 } else {
                     // User is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()
+                                            ))
+                                    .build(),
+                            RC_SIGN_IN);
                 }
                 // ...
             }
