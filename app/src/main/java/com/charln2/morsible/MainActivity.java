@@ -1,5 +1,6 @@
 package com.charln2.morsible;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
+    //todo: username, ListView, Adapter
 
     //Firebase Components
     private FirebaseAuth mAuth;
@@ -40,12 +42,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        detachDBRefListener();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
+        attachDBRefListener();
+        //clear adapter
     }
 
     @Override
@@ -57,7 +62,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(MainActivity.this, "Signed in on Reslt!", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(MainActivity.this, "Sign-in Cancelled on Reslt!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,8 +91,10 @@ public class MainActivity extends AppCompatActivity {
                     // User is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
+                    initUserComponents(); //Todo: pass user's displayname
                 } else {
                     // User is signed out
+                    destroyUserComponents();
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                     startActivityForResult(
                             AuthUI.getInstance()
@@ -91,6 +109,8 @@ public class MainActivity extends AppCompatActivity {
                 // ...
             }
         };
+
+
 
         // Init UI/Resources
         mp = MediaPlayer.create(this, R.raw.tone_600hz);
@@ -109,5 +129,29 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    private void initUserComponents() {
+        //set Username
+        attachDBRefListener();
+        // display messages (attach database ref listener)
+    }
+
+    private void destroyUserComponents() {
+        // unset username
+        // clear adapter
+        // detach dbRef listener
+    }
+
+    private void attachDBRefListener() {
+        //if childEventListener == null
+            //create/attach listener
+
+    }
+
+    private void detachDBRefListener() {
+        //if eventListener != null
+            //dbRef.removeEventListener(mChildEventListener);
+            // set to null
     }
 }
