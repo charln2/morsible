@@ -2,11 +2,13 @@ package com.charln2.morsible;
 
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.text.method.Touch;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -17,9 +19,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
-
-import static android.R.attr.button;
-import static android.R.attr.id;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity Class";
@@ -42,38 +41,26 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
         detachDBRefListener();
+        // TODO: clear adapter
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
-        attachDBRefListener();
+//        attachDBRefListener();
         //clear adapter
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (mAuthListener == null) {
-            //TODO: Move to onPause?
-            mAuth.removeAuthStateListener(mAuthListener);
-        }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            if (resultCode == RESULT_OK) {
-                Toast.makeText(MainActivity.this, "Signed in on Reslt!", Toast.LENGTH_SHORT).show();
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(MainActivity.this, "Sign-in Cancelled on Reslt!", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        }
-    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,36 +68,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Init Firebase Components
         mAuth = FirebaseAuth.getInstance();
-
-        // Init Listeners
-        mAuthListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                    Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
-                    initUserComponents(); //Todo: pass user's displayname
-                } else {
-                    // User is signed out
-                    destroyUserComponents();
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
-                                            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()
-                                            ))
-                                    .build(),
-                            RC_SIGN_IN);
-                }
-                // ...
-            }
-        };
-
-
 
         // Init UI/Resources
         mp = MediaPlayer.create(this, R.raw.tone_600hz);
@@ -129,11 +86,95 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        // Init Listeners --------------------
+        // Auth Listener: is user signed in? -------------
+        mAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    // Already signed in
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                    Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
+                    initUserComponents(); //Todo: pass user's displayname
+                } else {
+                    // User is signed out
+                    destroyUserComponents();
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                    Toast.makeText(getApplicationContext(), "onAuthStateChanged user == null! signedout!", Toast.LENGTH_SHORT).show();
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()
+                                            ))
+//                                    .setProviders(AuthUI.EMAIL_PROVIDER,
+//                                            AuthUI.GOOGLE_PROVIDER)
+                                    .build(),
+                            RC_SIGN_IN);
+                    _log("end of startActivityForResult login fail");
+                }
+            }
+        }; // ----------------------
+//        mAuthListener = new FirebaseAuth.AuthStateListener() {
+//            @Override
+//            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+//                FirebaseUser user = firebaseAuth.getCurrentUser();
+//                if (user != null) {
+//                    // User is signed in
+//                    initUserComponents();
+//                } else {
+//                    // User is signed out
+//                    destroyUserComponents();
+//                    startActivityForResult(
+//                            AuthUI.getInstance()
+//                                    .createSignInIntentBuilder()
+//                                    .setIsSmartLockEnabled(false)
+//                                    .setProviders(
+//                                            AuthUI.EMAIL_PROVIDER,
+//                                            AuthUI.GOOGLE_PROVIDER)
+//                                    .build(),
+//                            RC_SIGN_IN);
+//                }
+//            }
+//        }; // -----------------------
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: made it inside!\n RequestCode = "+requestCode+"\nresultCode =" + resultCode);
+        _makeToast("onActivityResult: inside");
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                Log.d(TAG, "onActivityResult: result ok!");
+                Toast.makeText(MainActivity.this, "Signed in on Result!", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Log.d(TAG, "onActivityResult: result cancelled!");
+                Toast.makeText(MainActivity.this, "Sign-in Cancelled on Result!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return super.onOptionsItemSelected(item);
     }
 
     private void initUserComponents() {
         //set Username
         attachDBRefListener();
+
         // display messages (attach database ref listener)
     }
 
@@ -153,5 +194,11 @@ public class MainActivity extends AppCompatActivity {
         //if eventListener != null
             //dbRef.removeEventListener(mChildEventListener);
             // set to null
+    }
+    private void _makeToast(String str) {
+        Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+    }
+    private void _log(String str) {
+        Log.d(TAG, str);
     }
 }
