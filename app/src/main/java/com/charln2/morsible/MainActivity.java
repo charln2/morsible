@@ -1,6 +1,7 @@
 package com.charln2.morsible;
 
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
+    AudioManager am;
 
     //Firebase Components
 
@@ -44,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Init UI/Resources
         mp = MediaPlayer.create(this, R.raw.tone_600hz);
-
         mp.setLooping(true);
+        am = (AudioManager) getSystemService(AUDIO_SERVICE);
         b = (Button) findViewById(R.id.button);
 //                            b.setHighlightColor(Color.CYAN);
 
