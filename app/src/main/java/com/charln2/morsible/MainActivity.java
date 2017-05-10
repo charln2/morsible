@@ -13,16 +13,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import static android.media.AudioManager.AUDIOFOCUS_GAIN;
-import static android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK;
-import static android.media.AudioManager.AUDIOFOCUS_LOSS;
-import static android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT;
-import static android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK;
-import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-import static android.os.Build.VERSION_CODES.M;
+import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "My_Audio";
@@ -30,11 +25,14 @@ public class MainActivity extends AppCompatActivity {
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
+    private boolean buttonActive;
     AudioManager am;
     AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
 
     //Firebase Components
     DatabaseReference mRootRef;
+    DatabaseReference mConditonRef;
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Init Firebase Components
         mRootRef = FirebaseDatabase.getInstance().getReference();
+        mConditonRef = mRootRef.child("condition");
+
         // Init Listeners
 
         // Init UI/Resources
@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         b = (Button) findViewById(R.id.button);
+        buttonActive = false;
 //                            b.setHighlightColor(Color.CYAN);
 
         //todo: prevent hiccup by resetting clip when reaching end or looping somehow.
@@ -91,17 +92,41 @@ public class MainActivity extends AppCompatActivity {
                             if (requestAudioFocus()) {
                                 Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
                                 mp.start();
+                                mConditonRef.setValue(true);
                             }
                         }
                         break;
                     case MotionEvent.ACTION_UP:
                         mp.pause();
+                        mConditonRef.setValue(false);
 //                            releaseMediaPlayer();
                         break;
                 }
                 return false;
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mConditonRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                boolean b = dataSnapshot.getValue(Boolean.class);
+                buttonActive = b;
+                setButtonText(Boolean.toString(b));
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void setButtonText(String s) {
+        b.setText(s);
     }
 
     private boolean requestAudioFocus() {
