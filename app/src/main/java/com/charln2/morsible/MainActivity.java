@@ -1,5 +1,6 @@
 package com.charln2.morsible;
 
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -32,73 +33,20 @@ public class MainActivity extends AppCompatActivity {
     private Button b;
 
     //Firebase Components
-    private FirebaseAuth mAuth;
-    private FirebaseAuth.AuthStateListener mAuthListener;
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mAuth.addAuthStateListener(mAuthListener);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mAuth.addAuthStateListener(mAuthListener);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (mAuthListener == null) {
-            //TODO: Move to onPause?
-            mAuth.removeAuthStateListener(mAuthListener);
-        }
-    }
-
-
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // Init Firebase Components
-        mAuth = FirebaseAuth.getInstance();
 
         // Init Listeners
-        mAuthListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                    Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
-                } else {
-                    // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
-                                            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()
-                                            ))
-                                    .build(),
-                            RC_SIGN_IN);
-                }
-                // ...
-            }
-        };
 
         // Init UI/Resources
         mp = MediaPlayer.create(this, R.raw.tone_600hz);
         b = (Button) findViewById(R.id.button);
+//                            b.setHighlightColor(Color.CYAN);
+
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -110,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                     mp.pause();
 //                    mp.seekTo(0);
                 }
-                return true;
+                return false; // So the OnTouchListener does not consume event; its color can change
             }
         });
     }
@@ -136,6 +84,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logout() {
-        //todo: paste authui logout code here
+        //todo: paste authui logout code here or delete in merge conflict
     }
 }
