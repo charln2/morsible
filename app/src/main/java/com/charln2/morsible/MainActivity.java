@@ -13,6 +13,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import static android.media.AudioManager.AUDIOFOCUS_GAIN;
 import static android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK;
 import static android.media.AudioManager.AUDIOFOCUS_LOSS;
@@ -31,13 +34,14 @@ public class MainActivity extends AppCompatActivity {
     AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
 
     //Firebase Components
+    DatabaseReference mRootRef;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // Init Firebase Components
-
+        mRootRef = FirebaseDatabase.getInstance().getReference();
         // Init Listeners
 
         // Init UI/Resources
