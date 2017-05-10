@@ -44,23 +44,31 @@ public class MainActivity extends AppCompatActivity {
 
         // Init UI/Resources
         mp = MediaPlayer.create(this, R.raw.tone_600hz);
+
+        mp.setLooping(true);
         b = (Button) findViewById(R.id.button);
 //                            b.setHighlightColor(Color.CYAN);
 
+        //todo: prevent hiccup by resetting clip when reaching end or looping somehow.
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    if (!mp.isPlaying()) {
-                        mp.start();
-                    }
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    mp.pause();
-//                    mp.seekTo(0);
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if (!mp.isPlaying()) {
+                            mp.start();
+                        }
+                    case MotionEvent.ACTION_UP:
+                        mp.pause();
+                        break;
                 }
-                return false; // So the OnTouchListener does not consume event; its color can change
+                return false;
             }
         });
+    }
+
+    private void _makeToast(String s) {
+        Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
     }
 
     @Override
