@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
             public boolean onTouch(View v, MotionEvent event) {
                 switch(event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        // release media player to switch to another?
+
                         if (!mp.isPlaying()) {
                             mp.start();
                         }
@@ -65,6 +67,13 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    private void releaseMediaPlayer() {
+        if (mp != null) {
+            mp.release();
+            mp = null;
+        }
     }
 
     private void _makeToast(String s) {
@@ -89,6 +98,12 @@ public class MainActivity extends AppCompatActivity {
         default:
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseMediaPlayer();
     }
 
     private void logout() {
