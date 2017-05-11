@@ -19,10 +19,10 @@
 
     <Button
         android:id="@+id/button"
-        style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:background="@drawable/mybutton"
         tools:layout_editor_absoluteX="146dp"
         tools:layout_editor_absoluteY="416dp" />
 
