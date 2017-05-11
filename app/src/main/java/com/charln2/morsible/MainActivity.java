@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         // Init Firebase Components
         mRootRef = FirebaseDatabase.getInstance().getReference();
         mConditonRef = mRootRef.child("condition");
+        mAuth = FirebaseAuth.getInstance();
 
         // Init Listeners
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -182,16 +183,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        mAuth.addAuthStateListener(mAuthListener);
+        acquireMediaPlayer();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         releaseMediaPlayer();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        acquireMediaPlayer();
-    }
 
     private void initUserComponents() {
         //set Username
