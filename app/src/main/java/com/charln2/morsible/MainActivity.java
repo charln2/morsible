@@ -1,5 +1,8 @@
 package com.charln2.morsible;
 
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.support.v4.content.ContextCompat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.content.Intent;
@@ -15,6 +18,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
@@ -31,32 +35,39 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
+    private final int BORDER_WIDTH = 16;
     private static final String TAG = "My_Audio";
     private static final int RC_SIGN_IN = 1;
+
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
-    private boolean buttonActive;
-    AudioManager am;
-    AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
+    private TextView tv;
+    private GradientDrawable gd;
+    private Tone mTone;
+
+    private AudioManager am;
+    private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
     //todo: username, ListView, Adapter
 
     //Firebase Components
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    FirebaseDatabase mDatabase;
     DatabaseReference mRootRef;
-    DatabaseReference mConditonRef;
+    DatabaseReference mToneRef;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // Init Firebase Components
-        mRootRef = FirebaseDatabase.getInstance().getReference();
-        mConditonRef = mRootRef.child("condition");
-        mAuth = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance();
+        mRootRef = mDatabase.getReference();
+        mToneRef = mRootRef.child("tone");
+//        mToneRef.setValue(new Tone()); // worked!
 
-        // Init Listeners
+        mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -78,8 +89,6 @@ public class MainActivity extends AppCompatActivity {
                                     .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
                                             new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()
                                     ))
-//                                    .setProviders(AuthUI.EMAIL_PROVIDER,
-//                                            AuthUI.GOOGLE_PROVIDER)
                                     .build(),
                             RC_SIGN_IN);
                 }
@@ -113,34 +122,39 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+        mTone = new Tone();
         b = (Button) findViewById(R.id.button);
-        buttonActive = false;
-//                            b.setHighlightColor(Color.CYAN);
-
+        tv = (TextView) findViewById(R.id.textview);
         //todo: prevent hiccup by resetting clip when reaching end or looping somehow.
+        gd = (GradientDrawable)tv.getBackground();
+//        gd.setStroke(BORDER_WIDTH, ContextCompat.getColor(getApplicationContext(), R.color.colorBorderHighlight)); // set stroke width and stroke color
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
 //                          mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-                        // todo: find better method for reassigning tone after release
-                        if (mp==null) {
-                            Log.v(TAG, "Oh no mp is null!... but we got this!");
-                            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-                        }
-                        if (!mp.isPlaying()) {
-                            if (requestAudioFocus()) {
-                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
-                                mp.start();
-                                mConditonRef.setValue(true);
-                            }
-                        }
+//                        // todo: find better method for reassigning tone after release
+//                        if (mp==null) {
+//                            Log.v(TAG, "Oh no mp is null!... but we got this!");
+//                            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
+//                        }
+//                        if (!mp.isPlaying()) {
+//                            if (requestAudioFocus()) {
+//                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
+//                                mp.start();
+////                                mConditonRef.setValue(true);
+//                            }
+//                        }
+                        mTone.setButtonActivated(true);
+                        mToneRef.setValue(mTone);
                         break;
                     case MotionEvent.ACTION_UP:
-                        mp.pause();
-                        mConditonRef.setValue(false);
+//                        mp.pause();
+//                        mConditonRef.setValue(false);
 //                            releaseMediaPlayer();
+                        mTone.setButtonActivated(false);
+                        mToneRef.setValue(mTone);
                         break;
                 }
                 return false;
@@ -167,19 +181,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        mConditonRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                boolean b = dataSnapshot.getValue(Boolean.class);
-                buttonActive = b;
-                setButtonText(Boolean.toString(b));
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
+//        mConditonRef.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                boolean b = dataSnapshot.getValue(Boolean.class);
+//                buttonActive = b;
+//                setButtonText(Boolean.toString(b));
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
     }
 
     @Override
