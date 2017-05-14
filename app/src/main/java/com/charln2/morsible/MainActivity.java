@@ -39,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "My_Audio";
     private static final int RC_SIGN_IN = 1;
 
+
+    public static int touchCount = 0;
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
@@ -128,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         //todo: prevent hiccup by resetting clip when reaching end or looping somehow.
         gd = (GradientDrawable)tv.getBackground();
 //        gd.setStroke(BORDER_WIDTH, ContextCompat.getColor(getApplicationContext(), R.color.colorBorderHighlight)); // set stroke width and stroke color
+        touchCount=0;
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -146,10 +149,13 @@ public class MainActivity extends AppCompatActivity {
 ////                                mConditonRef.setValue(true);
 //                            }
 //                        }
+                        touchCount++;
+                        _log("ACTION_DOWN");
                         mTone.setButtonActivated(true);
                         mToneRef.setValue(mTone);
                         break;
                     case MotionEvent.ACTION_UP:
+                        _log("ACTION_UP");
 //                        mp.pause();
 //                        mConditonRef.setValue(false);
 //                            releaseMediaPlayer();
@@ -181,19 +187,34 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-//        mConditonRef.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
+        ValueEventListener mValueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
 //                boolean b = dataSnapshot.getValue(Boolean.class);
+                Tone t = dataSnapshot.getValue(Tone.class);
 //                buttonActive = b;
-//                setButtonText(Boolean.toString(b));
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
+//                    setButtonText(t.toString());
+                _log(t.toString()+touchCount);
+                if (t.isButtonActivated()) {
+                    setBorderColor(R.color.colorBorderHighlight);
+                    _makeToast("isActive"+touchCount);
+                    _log("isActive"+touchCount);
+//                    setBorderColor(t.getHighlightColor());
+
+                } else {
+                    _makeToast("notActive");
+                    _log("notActive");
+                    setBorderColor(R.color.colorBorderDefault);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                //
+                _log("OnCancelled");
+            }
+        };
+        mToneRef.addValueEventListener(mValueEventListener);
     }
 
     @Override
@@ -249,6 +270,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void setButtonText(String s) {
         b.setText(s);
+    }
+    private void setBorderColor(int colorID) {
+        gd.setStroke(BORDER_WIDTH,
+                ContextCompat.getColor(getApplicationContext(),
+                colorID)); // set stroke width and stroke color
     }
 
     private boolean requestAudioFocus() {

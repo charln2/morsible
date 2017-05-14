@@ -25,6 +25,10 @@ public class Tone {
         this.highlightColor = highlightColor;
     }
 
+    public boolean isButtonActivated() {
+        return isButtonActivated;
+    }
+
     public void setButtonActivated(boolean buttonActivated) {
         isButtonActivated = buttonActivated;
     }
@@ -47,5 +51,12 @@ public class Tone {
 
     public int getHighlightColor() {
         return highlightColor;
+    }
+
+    @Override
+    public String toString() {
+        return "[isActive:"+isButtonActivated+
+                " soundId:"+soundId+
+                " highlightColor:"+highlightColor+"]";
     }
 }
