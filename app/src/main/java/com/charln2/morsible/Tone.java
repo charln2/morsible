@@ -11,15 +11,15 @@ import static android.graphics.Color.CYAN;
 public class Tone {
     private boolean isButtonActivated;
     private int soundId;
-    private int highlightColor;
+    private String highlightColor;
 
     public Tone() {
         isButtonActivated = false;
         soundId = R.raw.tone_600hz;
-        highlightColor = Color.CYAN;
+        highlightColor = "#FFAA77";
     }
 
-    public Tone(boolean buttonActive, int soundId, int highlightColor) {
+    public Tone(boolean buttonActive, int soundId, String highlightColor) {
         this.isButtonActivated = buttonActive;
         this.soundId = soundId;
         this.highlightColor = highlightColor;
@@ -33,30 +33,26 @@ public class Tone {
         isButtonActivated = buttonActivated;
     }
 
-    public void setSoundId(int soundId) {
-        this.soundId = soundId;
-    }
-
-    public void setHighlightColor(int highlightColor) {
-        this.highlightColor = highlightColor;
-    }
-
-    public boolean isActive() {
-        return isButtonActivated;
-    }
-
     public int getSoundId() {
         return soundId;
     }
 
-    public int getHighlightColor() {
+    public void setSoundId(int soundId) {
+        this.soundId = soundId;
+    }
+
+    public String getHighlightColor() {
         return highlightColor;
+    }
+
+    public void setHighlightColor(String highlightColor) {
+        this.highlightColor = highlightColor;
     }
 
     @Override
     public String toString() {
-        return "[isActive:"+isButtonActivated+
-                " soundId:"+soundId+
-                " highlightColor:"+highlightColor+"]";
+        return "[isActive:" + isButtonActivated +
+                " soundId:" + soundId +
+                " highlightColor:" + highlightColor + "]";
     }
 }
