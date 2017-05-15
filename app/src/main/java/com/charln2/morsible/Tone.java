@@ -2,6 +2,8 @@ package com.charln2.morsible;
 
 import android.graphics.Color;
 
+import retrofit2.http.HEAD;
+
 import static android.graphics.Color.CYAN;
 
 /**

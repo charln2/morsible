@@ -230,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                         setBorderColor(R.color.colorBorderDefault);
                         //                        mp.pause();
                         //                            releaseMediaPlayer();
+                        setBorderColor(R.color.colorBorderDefault);
                     }
                 }
 
