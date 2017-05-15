@@ -15,19 +15,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -35,29 +32,25 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
-    private final int BORDER_WIDTH = 16;
-    private static final String TAG = "My_Audio";
+    private static final String TAG = "MainActivity";
     private static final int RC_SIGN_IN = 1;
-
-
-    public static int touchCount = 0;
+    private final int BORDER_WIDTH = 16;
+    FirebaseDatabase mDatabase;
+    DatabaseReference mRootRef;
+    DatabaseReference mToneRef;
+    ValueEventListener mValueEventListener;
     //UI/ Resources
     private MediaPlayer mp;
     private Button b;
     private TextView tv;
     private GradientDrawable gd;
+    //todo: username, ListView, Adapter
     private Tone mTone;
-
     private AudioManager am;
     private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
-    //todo: username, ListView, Adapter
-
     //Firebase Components
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
-    FirebaseDatabase mDatabase;
-    DatabaseReference mRootRef;
-    DatabaseReference mToneRef;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,10 +71,10 @@ public class MainActivity extends AppCompatActivity {
                     // Already signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
-                    initUserComponents(); //Todo: pass user's displayname
+                    onSignedInInit(); //Todo: pass user's displayname
                 } else {
                     // User is signed out
-                    destroyUserComponents();
+                    onSignedOutCleanup();
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                     Toast.makeText(getApplicationContext(), "onAuthStateChanged user == null! signedout!", Toast.LENGTH_SHORT).show();
                     startActivityForResult(
@@ -127,38 +120,18 @@ public class MainActivity extends AppCompatActivity {
         mTone = new Tone();
         b = (Button) findViewById(R.id.button);
         tv = (TextView) findViewById(R.id.textview);
-        //todo: prevent hiccup by resetting clip when reaching end or looping somehow.
-        gd = (GradientDrawable)tv.getBackground();
-//        gd.setStroke(BORDER_WIDTH, ContextCompat.getColor(getApplicationContext(), R.color.colorBorderHighlight)); // set stroke width and stroke color
-        touchCount=0;
+        gd = (GradientDrawable) tv.getBackground();
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-//                          mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-//                        // todo: find better method for reassigning tone after release
-//                        if (mp==null) {
-//                            Log.v(TAG, "Oh no mp is null!... but we got this!");
-//                            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-//                        }
-//                        if (!mp.isPlaying()) {
-//                            if (requestAudioFocus()) {
-//                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
-//                                mp.start();
-////                                mConditonRef.setValue(true);
-//                            }
-//                        }
-                        touchCount++;
                         _log("ACTION_DOWN");
                         mTone.setButtonActivated(true);
                         mToneRef.setValue(mTone);
                         break;
                     case MotionEvent.ACTION_UP:
                         _log("ACTION_UP");
-//                        mp.pause();
-//                        mConditonRef.setValue(false);
-//                            releaseMediaPlayer();
                         mTone.setButtonActivated(false);
                         mToneRef.setValue(mTone);
                         break;
@@ -184,37 +157,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     @Override
     protected void onStart() {
         super.onStart();
-        ValueEventListener mValueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-//                boolean b = dataSnapshot.getValue(Boolean.class);
-                Tone t = dataSnapshot.getValue(Tone.class);
-//                buttonActive = b;
-//                    setButtonText(t.toString());
-                _log(t.toString()+touchCount);
-                if (t.isButtonActivated()) {
-                    setBorderColor(R.color.colorBorderHighlight);
-                    _makeToast("isActive"+touchCount);
-                    _log("isActive"+touchCount);
-//                    setBorderColor(t.getHighlightColor());
 
-                } else {
-                    _makeToast("notActive");
-                    _log("notActive");
-                    setBorderColor(R.color.colorBorderDefault);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                //
-                _log("OnCancelled");
-            }
-        };
-        mToneRef.addValueEventListener(mValueEventListener);
     }
 
     @Override
@@ -230,6 +177,8 @@ public class MainActivity extends AppCompatActivity {
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
+        // clear message adapter, if applicable
+        detachDBRefListener();
     }
 
     @Override
@@ -238,30 +187,68 @@ public class MainActivity extends AppCompatActivity {
         releaseMediaPlayer();
     }
 
-
-    private void initUserComponents() {
+    private void onSignedInInit() {
         //set Username
         attachDBRefListener();
-
-        // display messages (attach database ref listener)
+        mToneRef.setValue(new Tone());
     }
 
-    private void destroyUserComponents() {
+    private void onSignedOutCleanup() {
         // unset username
         // clear adapter
-        // detach dbRef listener
+        detachDBRefListener();
     }
 
     private void attachDBRefListener() {
-        //if childEventListener == null
-            //create/attach listener
+        if (mValueEventListener == null) {
+            mValueEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Tone t = dataSnapshot.getValue(Tone.class);
+                    _log(t.toString());
+                    if (t.isButtonActivated()) {
+                        _makeToast("isActive");
+                        _log("isActive");
+                        setBorderColor(Color.parseColor(t.getHighlightColor()));
+                        //                    setBorderColor(t.getHighlightColor());
+                        //                          mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
+                        //                        // todo: find better method for reassigning tone after release
+                        //                        if (mp==null) {
+                        //                            Log.v(TAG, "Oh no mp is null!... but we got this!");
+                        //                            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
+                        //                        }
+                        //                        if (!mp.isPlaying()) {
+                        //                            if (requestAudioFocus()) {
+                        //                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
+                        //                                mp.start();
+                        ////                                mConditonRef.setValue(true);
+                        //                            }
+                        //                        }
 
+                    } else {
+                        _makeToast("notActive");
+                        _log("notActive");
+                        //                        mp.pause();
+                        //                        mConditonRef.setValue(false);
+                        //                            releaseMediaPlayer();
+                        setBorderColor(R.color.colorBorderDefault);
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    _log("OnCancelled");
+                }
+            };
+            mToneRef.addValueEventListener(mValueEventListener);
+        }
     }
 
     private void detachDBRefListener() {
-        //if eventListener != null
-            //dbRef.removeEventListener(mChildEventListener);
-            // set to null
+        if (mValueEventListener != null) {
+            mToneRef.removeEventListener(mValueEventListener);
+            mValueEventListener = null;
+        }
     }
 
     private void _log(String str) {
@@ -271,10 +258,9 @@ public class MainActivity extends AppCompatActivity {
     private void setButtonText(String s) {
         b.setText(s);
     }
-    private void setBorderColor(int colorID) {
-        gd.setStroke(BORDER_WIDTH,
-                ContextCompat.getColor(getApplicationContext(),
-                colorID)); // set stroke width and stroke color
+
+    private void setBorderColor(int colorHex) {
+        gd.setStroke(BORDER_WIDTH, colorHex); // set stroke width and stroke color
     }
 
     private boolean requestAudioFocus() {
@@ -321,8 +307,8 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_logout:
                 logout();
                 return true;
-        default:
-            return super.onOptionsItemSelected(item);
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
