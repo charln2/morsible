@@ -11,6 +11,7 @@ import static android.graphics.Color.CYAN;
  */
 
 public class User {
+    private String key;
     private boolean isButtonActivated;
     private int soundId;
     private String highlightColor;
@@ -21,10 +22,15 @@ public class User {
         highlightColor = "#FFAA77";
     }
 
-    public User(boolean buttonActive, int soundId, String highlightColor) {
-        this.isButtonActivated = buttonActive;
+    public User(String key, boolean isButtonActivated, int soundId, String highlightColor) {
+        this.key = key;
+        this.isButtonActivated = isButtonActivated;
         this.soundId = soundId;
         this.highlightColor = highlightColor;
+    }
+
+    public String getKey() {
+        return key;
     }
 
     public boolean isButtonActivated() {
@@ -39,6 +45,10 @@ public class User {
         return soundId;
     }
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public void setSoundId(int soundId) {
         this.soundId = soundId;
     }
@@ -51,10 +61,21 @@ public class User {
         this.highlightColor = highlightColor;
     }
 
+    public void updateValues(User u) {
+        this.isButtonActivated = u.isButtonActivated;
+        this.soundId = u.soundId;
+        this.highlightColor = u.highlightColor;
+    }
+
     @Override
     public String toString() {
         return "[isActive:" + isButtonActivated +
                 " soundId:" + soundId +
                 " highlightColor:" + highlightColor + "]";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this.key == ((User)obj).getKey();
     }
 }
