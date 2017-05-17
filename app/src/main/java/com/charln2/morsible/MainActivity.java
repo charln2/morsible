@@ -2,7 +2,6 @@ package com.charln2.morsible;
 
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.support.v4.content.ContextCompat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.content.Intent;
@@ -41,11 +40,12 @@ public class MainActivity extends AppCompatActivity {
     ValueEventListener mValueEventListener;
     //UI/ Resources
     private MediaPlayer mp;
+    private int cloudSoundId;
     private Button b;
     private TextView tv;
     private GradientDrawable gd;
     //todo: username, ListView, Adapter
-    private Tone mTone;
+    private User mUser;
     private AudioManager am;
     private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
     //Firebase Components
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance();
         mRootRef = mDatabase.getReference();
         mToneRef = mRootRef.child("tone");
-//        mToneRef.setValue(new Tone()); // worked!
+//        mToneRef.setValue(new User()); // worked!
 
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -91,8 +91,9 @@ public class MainActivity extends AppCompatActivity {
         };
 
         // Init UI/Resources
-        mp = MediaPlayer.create(this, R.raw.tone_600hz);
-        mp.setLooping(true);
+//        mp = MediaPlayer.create(this, mUser.getSoundId());
+//        mp.start();
+//        mp.setLooping(true);
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
         amFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -100,7 +101,9 @@ public class MainActivity extends AppCompatActivity {
                 switch (focusChange) {
                     case AudioManager.AUDIOFOCUS_GAIN:
                         Log.v(TAG, "AUDIOFOCUS_GAIN");
+                    if (requestAudioFocus()) {
                         mp.start();
+                    }
                         break;
                     case AudioManager.AUDIOFOCUS_LOSS:
                         Log.v(TAG, "AUDIOFOCUS_LOSS");
@@ -117,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        mTone = new Tone();
+        mUser = new User();
         b = (Button) findViewById(R.id.button);
         tv = (TextView) findViewById(R.id.textview);
         gd = (GradientDrawable) tv.getBackground();
@@ -127,13 +130,15 @@ public class MainActivity extends AppCompatActivity {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         _log("ACTION_DOWN");
-                        mTone.setButtonActivated(true);
-                        mToneRef.setValue(mTone);
+                        mUser.setButtonActivated(true);
+                        mToneRef.setValue(mUser);
+//                        mp.start();
                         break;
                     case MotionEvent.ACTION_UP:
                         _log("ACTION_UP");
-                        mTone.setButtonActivated(false);
-                        mToneRef.setValue(mTone);
+                        mUser.setButtonActivated(false);
+                        mToneRef.setValue(mUser);
+//                        mp.pause();
                         break;
                 }
                 return false;
@@ -190,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
     private void onSignedInInit() {
         //set Username
         attachDBRefListener();
-        mToneRef.setValue(new Tone());
+        mToneRef.setValue(new User());
     }
 
     private void onSignedOutCleanup() {
@@ -204,33 +209,36 @@ public class MainActivity extends AppCompatActivity {
             mValueEventListener = new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    Tone t = dataSnapshot.getValue(Tone.class);
+                    User t = dataSnapshot.getValue(User.class);
                     _log(t.toString());
+//                    if (mp==null || t.getSoundId() != mUser.getSoundId()) {
+//                        mp = MediaPlayer.create(MainActivity.this, t.getSoundId());
+//                    }
                     if (t.isButtonActivated()) {
                         _makeToast("isActive");
                         _log("isActive");
+//                        acquireMediaPlayer();
+                        if (requestAudioFocus()) {
+                            mp.start();
+                        }
                         setBorderColor(Color.parseColor(t.getHighlightColor()));
-                        //                          mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-                        //                        // todo: find better method for reassigning tone after release
-                        //                        if (mp==null) {
-                        //                            Log.v(TAG, "Oh no mp is null!... but we got this!");
-                        //                            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
-                        //                        }
-                        //                        if (!mp.isPlaying()) {
-                        //                            if (requestAudioFocus()) {
-                        //                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
-                        //                                mp.start();
-                        ////                                mConditonRef.setValue(true);
-                        //                            }
-                        //                        }
 
+                        //get received sound if null or different
+
+//                        if (!mp.isPlaying()) {
+//                            if (requestAudioFocus()) {
+//                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
+//                                mp.start();
+//                                mConditonRef.setValue(true);
+//                            }
+//                        }
                     } else {
-                        _makeToast("notActive");
-                        _log("notActive");
+//                        _makeToast("notActive");
+//                        _log("notActive");
                         setBorderColor(R.color.colorBorderDefault);
-                        //                        mp.pause();
-                        //                            releaseMediaPlayer();
-                        setBorderColor(R.color.colorBorderDefault);
+                        if (mp.isPlaying()) { // I don't know why this fixes it.
+                            mp.pause();
+                        }
                     }
                 }
 
@@ -282,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void acquireMediaPlayer() {
         if (mp == null) {
-            mp = MediaPlayer.create(MainActivity.this, R.raw.tone_600hz);
+            mp = MediaPlayer.create(MainActivity.this, mUser.getSoundId());
         }
     }
 
