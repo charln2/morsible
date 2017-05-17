@@ -10,18 +10,18 @@ import static android.graphics.Color.CYAN;
  * Created by charl on 5/11/2017.
  */
 
-public class Tone {
+public class User {
     private boolean isButtonActivated;
     private int soundId;
     private String highlightColor;
 
-    public Tone() {
+    public User() {
         isButtonActivated = false;
         soundId = R.raw.tone_600hz;
         highlightColor = "#FFAA77";
     }
 
-    public Tone(boolean buttonActive, int soundId, String highlightColor) {
+    public User(boolean buttonActive, int soundId, String highlightColor) {
         this.isButtonActivated = buttonActive;
         this.soundId = soundId;
         this.highlightColor = highlightColor;
