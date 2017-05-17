@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,8 +23,11 @@ import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,17 +38,24 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int RC_SIGN_IN = 1;
     private final int BORDER_WIDTH = 16;
-    FirebaseDatabase mDatabase;
-    DatabaseReference mRootRef;
-    DatabaseReference mToneRef;
-    ValueEventListener mValueEventListener;
+    private FirebaseDatabase mDatabase;
+    private DatabaseReference mRootRef;
+    private DatabaseReference mSessionRef;
+    private DatabaseReference mUserRef;
+
+    private ValueEventListener mValueEventListener;
+    private ChildEventListener mChildEventListener;
     //UI/ Resources
     private MediaPlayer mp;
     private int cloudSoundId;
     private Button b;
-    private TextView tv;
+    private TextView mActiveTextView;
+    private TextView mNameTextView;
     private GradientDrawable gd;
-    //todo: username, ListView, Adapter
+    //todo: username
+    List<User> userBoxes = new ArrayList<>();
+    private ListView mUserListView;
+    private UserAdapter mUserAdapter;
     private User mUser;
     private AudioManager am;
     private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
@@ -59,8 +70,8 @@ public class MainActivity extends AppCompatActivity {
         // Init Firebase Components
         mDatabase = FirebaseDatabase.getInstance();
         mRootRef = mDatabase.getReference();
-        mToneRef = mRootRef.child("tone");
-//        mToneRef.setValue(new User()); // worked!
+        mSessionRef = mRootRef.child("session");
+//        mSessionRef.setValue(new User()); // worked!
 
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -71,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     // Already signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     Toast.makeText(getApplicationContext(), "Signed in!", Toast.LENGTH_SHORT).show();
-                    onSignedInInit(); //Todo: pass user's displayname
+                    onSignedInInit(user.getDisplayName()); //Todo: pass user's displayname
                 } else {
                     // User is signed out
                     onSignedOutCleanup();
@@ -121,9 +132,11 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         mUser = new User();
+        mUserListView = (ListView) findViewById(R.id.userListView);
+        mUserAdapter = new UserAdapter(this, R.layout.item_user, userBoxes);
+        mUserListView.setAdapter(mUserAdapter);
+        mNameTextView = (TextView) findViewById(R.id.nameTextView);
         b = (Button) findViewById(R.id.button);
-        tv = (TextView) findViewById(R.id.textview);
-        gd = (GradientDrawable) tv.getBackground();
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -131,13 +144,13 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_DOWN:
                         _log("ACTION_DOWN");
                         mUser.setButtonActivated(true);
-                        mToneRef.setValue(mUser);
+                        mUserRef.setValue(mUser);
 //                        mp.start();
                         break;
                     case MotionEvent.ACTION_UP:
                         _log("ACTION_UP");
                         mUser.setButtonActivated(false);
-                        mToneRef.setValue(mUser);
+                        mUserRef.setValue(mUser);
 //                        mp.pause();
                         break;
                 }
@@ -166,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
     }
 
     @Override
@@ -174,6 +186,14 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
         acquireMediaPlayer();
+
+        // clear adapter
+        mUserAdapter.clear();
+        //push this user onto db
+        String newKey = mSessionRef.push().getKey();
+        mUser.setKey(newKey);
+        mUserRef = mSessionRef.child(newKey);
+        mUserRef.setValue(mUser);
     }
 
     @Override
@@ -184,6 +204,9 @@ public class MainActivity extends AppCompatActivity {
         }
         // clear message adapter, if applicable
         detachDBRefListener();
+
+        // remove user from db
+        mUserRef.removeValue();
     }
 
     @Override
@@ -192,36 +215,60 @@ public class MainActivity extends AppCompatActivity {
         releaseMediaPlayer();
     }
 
-    private void onSignedInInit() {
-        //set Username
+    private void onSignedInInit(String userName) {
+        // set username
+//        mNameTextView.setText(userName);
         attachDBRefListener();
-        mToneRef.setValue(new User());
+//        mSessionRef.setValue(new User());
+
     }
 
     private void onSignedOutCleanup() {
         // unset username
-        // clear adapter
+
         detachDBRefListener();
     }
 
     private void attachDBRefListener() {
-        if (mValueEventListener == null) {
-            mValueEventListener = new ValueEventListener() {
+        if (mChildEventListener == null) {
+            mChildEventListener = new ChildEventListener() {
                 @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    User t = dataSnapshot.getValue(User.class);
-                    _log(t.toString());
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    User aUser = dataSnapshot.getValue(User.class);
+//                    mUserAdapter.clear();
+                    mUserAdapter.add(aUser);
+//                    rebuildArrayAdapter(dataSnapshot);
+                }
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+                    User aUser = dataSnapshot.getValue(User.class);
+                    mUserAdapter.remove(aUser);
+//                    rebuildArrayAdapter();
+                }
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                    User u = dataSnapshot.getValue(User.class);
+                    _log(u.toString());
 //                    if (mp==null || t.getSoundId() != mUser.getSoundId()) {
 //                        mp = MediaPlayer.create(MainActivity.this, t.getSoundId());
 //                    }
-                    if (t.isButtonActivated()) {
-                        _makeToast("isActive");
-                        _log("isActive");
+                    int i = mUserAdapter.getPosition(u);
+                    mUserAdapter.getItem(i).updateValues(u);
+//                    mUserAdapter.insert(u, i);
+//                    mUserAdapter.remove(u);
+                    mUserAdapter.notifyDataSetChanged();
+//                    mUserListView.invalidateViews();
+                    if (u.isButtonActivated()) {
+//                        _makeToast("isActive");
+//                        _log("isActive");
+
 //                        acquireMediaPlayer();
-                        if (requestAudioFocus()) {
-                            mp.start();
-                        }
-                        setBorderColor(Color.parseColor(t.getHighlightColor()));
+//                        if (requestAudioFocus()) {
+//                            mp.start();
+//                        }
+//        mActiveTextView = (TextView) findViewById(R.id.textview);
+//                        int pos = mUserAdapter.getPosition(u);
+//                        View curView = mUserAdapter.getItem(pos);
+//                        gd = (GradientDrawable) mActiveTextView.getBackground();
+//                        setBorderColor(Color.parseColor(u.getHighlightColor()));
 
                         //get received sound if null or different
 
@@ -233,29 +280,85 @@ public class MainActivity extends AppCompatActivity {
 //                            }
 //                        }
                     } else {
+//                        mUserAdapter.notifyDataSetChanged();
+
 //                        _makeToast("notActive");
 //                        _log("notActive");
-                        setBorderColor(R.color.colorBorderDefault);
-                        if (mp.isPlaying()) { // I don't know why this fixes it.
-                            mp.pause();
-                        }
+//                        setBorderColor(R.color.colorBorderDefault);
+//                        if (mp.isPlaying()) { // I don't know why this fixes it.
+//                            mp.pause();
+//                        }
                     }
-                }
+//                    mUserAdapter.notifyDataSetChanged();
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                    _log("OnCancelled");
                 }
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                public void onCancelled(DatabaseError databaseError) {}
             };
-            mToneRef.addValueEventListener(mValueEventListener);
+            mSessionRef.addChildEventListener(mChildEventListener);
         }
+//        if (mValueEventListener == null) {
+//            mValueEventListener = new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    User t = dataSnapshot.getValue(User.class);
+//                    _log(t.toString());
+////                    if (mp==null || t.getSoundId() != mUser.getSoundId()) {
+////                        mp = MediaPlayer.create(MainActivity.this, t.getSoundId());
+////                    }
+//                    if (t.isButtonActivated()) {
+//                        _makeToast("isActive");
+//                        _log("isActive");
+////                        acquireMediaPlayer();
+//                        if (requestAudioFocus()) {
+//                            mp.start();
+//                        }
+////                        setBorderColor(Color.parseColor(t.getHighlightColor()));
+//
+//                        //get received sound if null or different
+//
+////                        if (!mp.isPlaying()) {
+////                            if (requestAudioFocus()) {
+////                                Log.v(TAG, "AUDIOFOCUS_GAIN GRANTED, starting...");
+////                                mp.start();
+////                                mConditonRef.setValue(true);
+////                            }
+////                        }
+//                    } else {
+////                        _makeToast("notActive");
+////                        _log("notActive");
+////                        setBorderColor(R.color.colorBorderDefault);
+//                        if (mp.isPlaying()) { // I don't know why this fixes it.
+//                            mp.pause();
+//                        }
+//                    }
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                    _log("OnCancelled");
+//                }
+//            };
+//            mSessionRef.addValueEventListener(mValueEventListener);
+//        }
+    }
+
+    private void rebuildArrayAdapter(DataSnapshot dss) {
+        mUserAdapter.clear();
+
+        DatabaseReference parent = dss.getRef().getParent();
+
     }
 
     private void detachDBRefListener() {
-        if (mValueEventListener != null) {
-            mToneRef.removeEventListener(mValueEventListener);
-            mValueEventListener = null;
+        if (mChildEventListener != null) {
+            mSessionRef.removeEventListener(mChildEventListener);
+            mChildEventListener = null;
         }
+//        if (mValueEventListener != null) {
+//            mSessionRef.removeEventListener(mValueEventListener);
+//            mValueEventListener = null;
+//        }
     }
 
     private void _log(String str) {
