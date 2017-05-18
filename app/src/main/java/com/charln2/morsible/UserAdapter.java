@@ -16,13 +16,10 @@ import java.util.List;
 
 import static android.R.id.message;
 
-/**
- * Created by charl on 5/16/2017.
- */
-
 public class UserAdapter extends ArrayAdapter<User> {
     private static final int BORDER_WIDTH = 16;
     private final String TAG = "UserAdapter";
+
     public UserAdapter(Context context, int resource, List<User> objects) {
         super(context, resource, objects);
     }
@@ -35,6 +32,7 @@ public class UserAdapter extends ArrayAdapter<User> {
 
         TextView messageTextView = (TextView) convertView.findViewById(R.id.messageTextView);
         TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
+
         User userBlock = getItem(position);
         GradientDrawable gd = (GradientDrawable) convertView.getBackground();
         if (userBlock.isButtonActivated()) {
@@ -44,10 +42,8 @@ public class UserAdapter extends ArrayAdapter<User> {
             Log.d(TAG, "changing view color of user to inactive");
             gd.setStroke(BORDER_WIDTH, ContextCompat.getColor(getContext(), R.color.colorBorderDefault));
         }
-
 //        messageTextView.setText(message.getText());
         nameTextView.setText(userBlock.getUserName());
-        // set border color?
 
         return convertView;
     }

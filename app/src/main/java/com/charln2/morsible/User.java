@@ -8,10 +8,6 @@ import retrofit2.http.HEAD;
 
 import static android.graphics.Color.CYAN;
 
-/**
- * Created by charl on 5/11/2017.
- */
-
 public class User {
     private String userName;
     private String key;
@@ -45,6 +41,10 @@ public class User {
         return key;
     }
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public boolean isButtonActivated() {
         return isButtonActivated;
     }
@@ -55,10 +55,6 @@ public class User {
 
     public int getSoundId() {
         return soundId;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
     public void setSoundId(int soundId) {
@@ -89,6 +85,6 @@ public class User {
 
     @Override
     public boolean equals(Object obj) {
-        return this.userName.equals(((User)obj).getUserName());
+        return this.userName.equals(((User) obj).getUserName());
     }
 }

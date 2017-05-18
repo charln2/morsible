@@ -12,10 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="3"
-        android:stackFromBottom="false"
         android:divider="@android:color/transparent"
+        android:stackFromBottom="false"
         android:transcriptMode="alwaysScroll"
-        tools:listitem="@layout/item_user"/>
+        tools:listitem="@layout/item_user" />
 
     <Button
         android:id="@+id/button"
