@@ -186,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
         acquireMediaPlayer();
+        mUserAdapter.clear();
     }
 
     @Override
@@ -258,10 +259,10 @@ public class MainActivity extends AppCompatActivity {
 //                        _makeToast("isActive");
 //                        _log("isActive");
 
-//                        acquireMediaPlayer();
-//                        if (requestAudioFocus()) {
-//                            mp.start();
-//                        }
+                        acquireMediaPlayer();
+                        if (requestAudioFocus()) {
+                            mp.start();
+                        }
 //        mActiveTextView = (TextView) findViewById(R.id.textview);
 //                        int pos = mUserAdapter.getPosition(u);
 //                        View curView = mUserAdapter.getItem(pos);
@@ -283,9 +284,9 @@ public class MainActivity extends AppCompatActivity {
 //                        _makeToast("notActive");
 //                        _log("notActive");
 //                        setBorderColor(R.color.colorBorderDefault);
-//                        if (mp.isPlaying()) { // I don't know why this fixes it.
-//                            mp.pause();
-//                        }
+                        if (mp.isPlaying()) { // I don't know why this fixes it.
+                            mp.pause();
+                        }
                     }
 //                    mUserAdapter.notifyDataSetChanged();
 

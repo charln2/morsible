@@ -46,6 +46,7 @@ public class UserAdapter extends ArrayAdapter<User> {
         }
 
 //        messageTextView.setText(message.getText());
+        nameTextView.setText(userBlock.getUserName());
         // set border color?
 
         return convertView;
