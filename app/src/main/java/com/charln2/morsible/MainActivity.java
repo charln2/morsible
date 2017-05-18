@@ -186,14 +186,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mAuth.addAuthStateListener(mAuthListener);
         acquireMediaPlayer();
-
-        // clear adapter
-        mUserAdapter.clear();
-        //push this user onto db
-        String newKey = mSessionRef.push().getKey();
-        mUser.setKey(newKey);
-        mUserRef = mSessionRef.child(newKey);
-        mUserRef.setValue(mUser);
     }
 
     @Override
@@ -217,10 +209,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignedInInit(String userName) {
         // set username
+        mUser.setUserName(userName);
 //        mNameTextView.setText(userName);
+        mUserRef = mSessionRef.child(userName);
+        mUserRef.setValue(mUser);
+//        mUserAdapter.clear();
+        //push this user onto db
         attachDBRefListener();
 //        mSessionRef.setValue(new User());
-
+        // clear adapter
     }
 
     private void onSignedOutCleanup() {
@@ -237,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
                     User aUser = dataSnapshot.getValue(User.class);
 //                    mUserAdapter.clear();
                     mUserAdapter.add(aUser);
+                    mUserAdapter.notifyDataSetChanged();
 //                    rebuildArrayAdapter(dataSnapshot);
                 }
                 public void onChildRemoved(DataSnapshot dataSnapshot) {
@@ -341,13 +339,6 @@ public class MainActivity extends AppCompatActivity {
 //            };
 //            mSessionRef.addValueEventListener(mValueEventListener);
 //        }
-    }
-
-    private void rebuildArrayAdapter(DataSnapshot dss) {
-        mUserAdapter.clear();
-
-        DatabaseReference parent = dss.getRef().getParent();
-
     }
 
     private void detachDBRefListener() {

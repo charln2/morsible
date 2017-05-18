@@ -2,6 +2,8 @@ package com.charln2.morsible;
 
 import android.graphics.Color;
 
+import java.util.Objects;
+
 import retrofit2.http.HEAD;
 
 import static android.graphics.Color.CYAN;
@@ -11,6 +13,7 @@ import static android.graphics.Color.CYAN;
  */
 
 public class User {
+    private String userName;
     private String key;
     private boolean isButtonActivated;
     private int soundId;
@@ -23,10 +26,19 @@ public class User {
     }
 
     public User(String key, boolean isButtonActivated, int soundId, String highlightColor) {
+        userName = "Anonymous";
         this.key = key;
         this.isButtonActivated = isButtonActivated;
         this.soundId = soundId;
         this.highlightColor = highlightColor;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public String getKey() {
@@ -69,13 +81,14 @@ public class User {
 
     @Override
     public String toString() {
-        return "[isActive:" + isButtonActivated +
+        return "[user:" + userName +
+                "isActive:" + isButtonActivated +
                 " soundId:" + soundId +
                 " highlightColor:" + highlightColor + "]";
     }
 
     @Override
     public boolean equals(Object obj) {
-        return this.key == ((User)obj).getKey();
+        return this.userName.equals(((User)obj).getUserName());
     }
 }
