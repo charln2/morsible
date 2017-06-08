@@ -1,39 +1,39 @@
 package com.charln2.morsible;
 
-import android.view.MotionEvent;
-import android.view.View;
 import android.content.Intent;
-import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.util.Log;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int RC_SIGN_IN = 1;
+    private static final int BORDER_WIDTH = 16;
     List<User> users = new ArrayList<>();
     //Firebase
     private FirebaseAuth mAuth;
@@ -122,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
         mUserAdapter = new UserAdapter(this, R.layout.item_user, users);
         mUserListView.setAdapter(mUserAdapter);
         b = (Button) findViewById(R.id.button);
+        final GradientDrawable gd = (GradientDrawable) b.getBackground();
         b.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -129,10 +130,13 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_DOWN:
                         mUser.setButtonActivated(true);
                         mUserRef.setValue(mUser);
+                        gd.setStroke(BORDER_WIDTH, Color.parseColor(mUser.getHighlightColor()));
                         break;
                     case MotionEvent.ACTION_UP:
                         mUser.setButtonActivated(false);
                         mUserRef.setValue(mUser);
+                        gd.setStroke(BORDER_WIDTH,
+                                ContextCompat.getColor(getApplicationContext(), R.color.tw__transparent));
                         break;
                 }
                 return false;

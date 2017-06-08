@@ -9,12 +9,9 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.List;
-
-import static android.R.id.message;
 
 public class UserAdapter extends ArrayAdapter<User> {
     private static final int BORDER_WIDTH = 16;
@@ -40,7 +37,8 @@ public class UserAdapter extends ArrayAdapter<User> {
             gd.setStroke(BORDER_WIDTH, Color.parseColor(userBlock.getHighlightColor()));
         } else if (!userBlock.isButtonActivated()) {
             Log.d(TAG, "changing view color of user to inactive");
-            gd.setStroke(BORDER_WIDTH, ContextCompat.getColor(getContext(), R.color.colorBorderDefault));
+            gd.setStroke(BORDER_WIDTH,
+                    ContextCompat.getColor(getContext(), R.color.colorBorderDefault));
         }
 //        messageTextView.setText(message.getText());
         nameTextView.setText(userBlock.getUserName());
