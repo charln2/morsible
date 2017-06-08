@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,23 +7,21 @@
     android:orientation="vertical"
     tools:context="com.charln2.morsible.MainActivity">
 
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/mybutton"
+        tools:layout_editor_absoluteX="146dp"
+        tools:layout_editor_absoluteY="416dp" />
+
     <ListView
         android:id="@+id/userListView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="3"
+        android:layout_height="match_parent"
         android:divider="@android:color/transparent"
         android:stackFromBottom="false"
         android:transcriptMode="alwaysScroll"
         tools:listitem="@layout/item_user" />
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="@drawable/mybutton"
-        tools:layout_editor_absoluteX="146dp"
-        tools:layout_editor_absoluteY="416dp" />
-
-</LinearLayout>
+</RelativeLayout>
