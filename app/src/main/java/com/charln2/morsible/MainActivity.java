@@ -31,8 +31,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
+    private static final String LOG_TAG = "MainActivity";
     private static final int RC_SIGN_IN = 1;
+
+    //TODO: move logic to Layout
     private static final int BORDER_WIDTH = 16;
     List<User> users = new ArrayList<>();
     //Firebase
@@ -44,12 +46,12 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference mUserRef;
     private ChildEventListener mChildEventListener;
     //UI
-    private User mUser;
-    private MediaPlayer mp;
+    private User mUser; // user display
     private Button b;
     private ListView mUserListView;
     private UserAdapter mUserAdapter;
     // Audio
+    private MediaPlayer mp;
     private AudioManager am;
     private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
 
@@ -118,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         // UI
+        // TODO: Move logic to User object
         mUser = new User();
         mUserListView = (ListView) findViewById(R.id.userListView);
         mUserAdapter = new UserAdapter(this, R.layout.item_user, users);
@@ -145,6 +148,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+    // ==== ANDROID LIFECYCLE OVERRIDES ====
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -182,6 +187,8 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
         releaseMediaPlayer();
     }
+
+    // ____ ANDROID LIFECYCLE OVERRIDES ____
 
     private void onSignedInInit(String userName) {
         mUser.setUserName(userName);
