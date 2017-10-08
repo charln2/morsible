@@ -1,20 +1,14 @@
 package com.charln2.morsible;
 
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.View;
-import android.widget.Button;
 import android.widget.ListView;
 
 import com.firebase.ui.auth.AuthUI;
@@ -35,41 +29,55 @@ public class MainActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 1;
 
     //TODO: move logic to Layout
-    private static final int BORDER_WIDTH = 16;
-    List<User> users = new ArrayList<>();
+
     //Firebase
-    private FirebaseAuth mAuth;
-    private FirebaseAuth.AuthStateListener mAuthListener;
-    private FirebaseDatabase mDatabase;
-    private DatabaseReference mRootRef;
     private DatabaseReference mSessionRef;
     private DatabaseReference mUserRef;
     private ChildEventListener mChildEventListener;
+
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
+
     //UI
-    private User mUser; // user display
-    private Button b;
+    List<User> users = new ArrayList<>();
+    private User mUser; // user of application
     private ListView mUserListView;
     private UserAdapter mUserAdapter;
+
     // Audio
     private MediaPlayer mp;
     private AudioManager am;
     private AudioManager.OnAudioFocusChangeListener amFocusChangeListener;
 
-    /**
-     * Initializes all necessary components for a user's session
-     *
-     * @param savedInstanceState
-     */
+
+    // ==== INIT ====
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Database
-        mDatabase = FirebaseDatabase.getInstance();
-        mRootRef = mDatabase.getReference();
-        mSessionRef = mRootRef.child("session");
+        // Init Database
+        mSessionRef = FirebaseDatabase.getInstance().getReference().child("session");
 
-        // Authorization
+        initAuthentication();
+
+        // Audio
+        initAudio();
+
+        // UI
+        // TODO: Move logic to User object
+        mUser = new User(this, mSessionRef);
+
+        mUserListView = (ListView) findViewById(R.id.userListView);
+        mUserAdapter = new UserAdapter(this, R.layout.item_user, users);
+        mUserListView.setAdapter(mUserAdapter);
+    }
+
+    /**
+     * Logic for app authentication. Initializes FirebaseAuth and FirebaseAuth.AuthStateListener
+     * objects.
+     */
+    private void initAuthentication() {
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -94,8 +102,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+    }
 
-        // Audio
+    private void onSignedInInit(String userName) {
+        mUser.setUserName(userName);
+        mUser.setDBRef(mSessionRef.child(userName));
+        attachDBRefListener();
+    }
+
+    private void onSignedOutCleanup() {
+        detachDBRefListener();
+        if (mUserRef != null)
+            mUserRef.removeValue();
+    }
+
+    private void initAudio() {
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
         amFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -118,45 +139,31 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-
-        // UI
-        // TODO: Move logic to User object
-        mUser = new User();
-        mUserListView = (ListView) findViewById(R.id.userListView);
-        mUserAdapter = new UserAdapter(this, R.layout.item_user, users);
-        mUserListView.setAdapter(mUserAdapter);
-        b = (Button) findViewById(R.id.button);
-        final GradientDrawable gd = (GradientDrawable) b.getBackground();
-        b.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        mUser.setButtonActivated(true);
-                        mUserRef.setValue(mUser);
-                        gd.setStroke(BORDER_WIDTH, Color.parseColor(mUser.getHighlightColor()));
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        mUser.setButtonActivated(false);
-                        mUserRef.setValue(mUser);
-                        gd.setStroke(BORDER_WIDTH,
-                                ContextCompat.getColor(getApplicationContext(), R.color.tw__transparent));
-                        break;
-                }
-                return false;
-            }
-        });
     }
 
+    private boolean requestAudioFocus() {
+        return am.requestAudioFocus(amFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+    }
 
-    // ==== ANDROID LIFECYCLE OVERRIDES ====
+    private void releaseMediaPlayer() {
+        if (mp != null) {
+            mp.release();
+            mp = null;
+        }
+        am.abandonAudioFocus(amFocusChangeListener);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
-                //Signed In
+                // Signed In
             } else if (resultCode == RESULT_CANCELED) {
+                // Close application
                 finish();
             }
         }
@@ -188,21 +195,6 @@ public class MainActivity extends AppCompatActivity {
         releaseMediaPlayer();
     }
 
-    // ____ ANDROID LIFECYCLE OVERRIDES ____
-
-    private void onSignedInInit(String userName) {
-        mUser.setUserName(userName);
-        mUserRef = mSessionRef.child(userName);
-        mUserRef.setValue(mUser);
-        attachDBRefListener();
-    }
-
-    private void onSignedOutCleanup() {
-        detachDBRefListener();
-        if (mUserRef != null)
-            mUserRef.removeValue();
-    }
-
     private void attachDBRefListener() {
         if (mChildEventListener == null) {
             mChildEventListener = new ChildEventListener() {
@@ -222,6 +214,8 @@ public class MainActivity extends AppCompatActivity {
                     int i = mUserAdapter.getPosition(aUser);
                     mUserAdapter.getItem(i).updateValues(aUser);
                     mUserAdapter.notifyDataSetChanged();
+
+                    // Play tone if updated user button is active
                     if (aUser.isButtonActivated()) {
                         acquireMediaPlayer();
                         if (requestAudioFocus()) {
@@ -249,22 +243,6 @@ public class MainActivity extends AppCompatActivity {
             mSessionRef.removeEventListener(mChildEventListener);
             mChildEventListener = null;
         }
-    }
-
-    private boolean requestAudioFocus() {
-        return am.requestAudioFocus(amFocusChangeListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-
-                == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-    }
-
-    private void releaseMediaPlayer() {
-        if (mp != null) {
-            mp.release();
-            mp = null;
-        }
-        am.abandonAudioFocus(amFocusChangeListener);
     }
 
     private void acquireMediaPlayer() {

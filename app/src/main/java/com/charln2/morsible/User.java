@@ -1,6 +1,9 @@
 package com.charln2.morsible;
 
+import android.app.Activity;
 import android.graphics.Color;
+
+import com.google.firebase.database.DatabaseReference;
 
 import java.util.Objects;
 
@@ -14,11 +17,19 @@ public class User {
     private boolean isButtonActivated;
     private int soundId;
     private String highlightColor;
+    private MorseInterpreter morseInterpreter;
+    private DatabaseReference dbRef;
 
-    public User() {
+    private User(){} // do not allow instantiation of empty constructor
+    public User(Activity _activity) {
+        morseInterpreter = new MorseInterpreter(_activity, this);
         isButtonActivated = false;
         soundId = R.raw.tone_600hz;
         highlightColor = "#FFAA77";
+    }
+    public User(Activity _activity, DatabaseReference dbRef) {
+        this(_activity);
+        this.dbRef = dbRef;
     }
 
     public User(String key, boolean isButtonActivated, int soundId, String highlightColor) {
@@ -73,8 +84,17 @@ public class User {
         this.isButtonActivated = u.isButtonActivated;
         this.soundId = u.soundId;
         this.highlightColor = u.highlightColor;
+        //todo: message buffer
+    }
+    public void pushToFB() {
+        dbRef.setValue(this); // update db val
     }
 
+    public void setDBRef(DatabaseReference dbRef) {
+        this.dbRef = dbRef;
+        pushToFB();
+
+    }
     @Override
     public String toString() {
         return "[user:" + userName +
