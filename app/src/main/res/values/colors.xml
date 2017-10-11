@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!-- https://designschool.canva.com/blog/website-color-schemes/
+     #11. Cool vs. Warm by Akaru -->
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="colorBorderHighlight">#4FA5D5</color>
+    <color name="gunmetal">#233237</color>
+    <color name="navyBlue">#18121E</color>
+    <color name="rustyRed">#984B43</color>
+    <color name="warmYellow">#EAC67A</color>
     <color name="colorBorderDefault">#D3D3D3</color>
 </resources>
