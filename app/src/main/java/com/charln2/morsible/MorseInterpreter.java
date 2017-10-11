@@ -9,6 +9,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
 import static com.facebook.FacebookSdk.getApplicationContext;
 
 /**
@@ -17,6 +23,7 @@ import static com.facebook.FacebookSdk.getApplicationContext;
 
 public class MorseInterpreter {
     private final String LOG_TAG = getClass().getSimpleName();
+
     private static final int BORDER_WIDTH = 16;
     private final int DOT_DURATION = 50; // milliseconds
     private final int DASH_DURATION = DOT_DURATION * 3; // milliseconds
@@ -25,6 +32,7 @@ public class MorseInterpreter {
 
     private long lastStartTime;
     private long lastEndTime;
+    private HashMap<String, Character> morseDict;
     private StringBuilder workingChar; // stores dots and dashes to be parsed into chars
 
 
@@ -38,6 +46,7 @@ public class MorseInterpreter {
         this.activityMain = _activity;
         this.mUser = user;
 
+        buildMorseDict();
         b = (Button) activityMain.findViewById(R.id.button);
         final GradientDrawable gd = (GradientDrawable) b.getBackground();
         b.setOnTouchListener(new View.OnTouchListener() {
@@ -78,6 +87,31 @@ public class MorseInterpreter {
                 return false;
             }
         });
+    }
+
+    private void buildMorseDict() {
+        morseDict = new HashMap<>();
+        try {
+            InputStream is = getApplicationContext().getAssets().open("morsetranslation.txt");
+            Scanner sc = new Scanner(is);
+
+            while (sc.hasNextLine()) {
+                String[] line = sc.nextLine().split("\t", -1);
+                morseDict.put(line[1], line[0].charAt(0));
+            }
+
+            sc.close();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error opening morse dictionary");
+            e.printStackTrace();
+        }
+
+        for(Map.Entry<String, Character> entry : morseDict.entrySet()) {
+            String str = String.format("%-6s: %s", entry.getKey(), entry.getValue());
+            Log.v(LOG_TAG, str);
+//            Log.v(LOG_TAG, "" + morseDict.size());
+        }
+
     }
 
     private long parseTimeIdle() {
