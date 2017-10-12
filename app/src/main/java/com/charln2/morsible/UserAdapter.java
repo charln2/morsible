@@ -33,10 +33,10 @@ public class UserAdapter extends ArrayAdapter<User> {
         User userBlock = getItem(position);
         GradientDrawable gd = (GradientDrawable) convertView.getBackground();
         if (userBlock.isButtonActivated()) {
-            Log.d(TAG, "changing view color of user to active");
+//            Log.d(TAG, "changing view color of user to active");
             gd.setStroke(BORDER_WIDTH, Color.parseColor(userBlock.getHighlightColor()));
         } else if (!userBlock.isButtonActivated()) {
-            Log.d(TAG, "changing view color of user to inactive");
+//            Log.d(TAG, "changing view color of user to inactive");
             gd.setStroke(BORDER_WIDTH,
                     ContextCompat.getColor(getContext(), R.color.colorBorderDefault));
         }

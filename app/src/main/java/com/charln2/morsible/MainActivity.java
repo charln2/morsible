@@ -106,7 +106,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignedInInit(String userName) {
         mUser.setUserName(userName);
-        mUser.setDBRef(mSessionRef.child(userName));
+        mUserRef = mSessionRef.child(userName);
+        mUser.setDBRef(mUserRef);
         attachDBRefListener();
     }
 
@@ -265,6 +266,9 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.action_logout:
                 logout();
+                return true;
+            case R.id.clear:
+                mUser.clearBuffer();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
