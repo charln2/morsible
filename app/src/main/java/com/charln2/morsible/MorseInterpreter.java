@@ -102,7 +102,6 @@ public class MorseInterpreter {
                         Log.v("morsebuffer", "idleTime: " + idleTime);
                         if (idleTime >= SPACE_TIMEOUT) {
                             appendToMessage(" ");
-//                            space = " ";
                         }
 
                         // parse . or -
@@ -114,11 +113,7 @@ public class MorseInterpreter {
                         }
                         Log.v("morsebuffer", "touchTime = " + touchTime);
 
-                        // parse char from working sb via morseDictionary, if idle long enough
-                        // countdown timer?
                         charCountdown.start();
-                        if (idleTime >= CHAR_TIMEOUT) {
-                        }
                         break;
                 }
                 mUser.pushToFB();

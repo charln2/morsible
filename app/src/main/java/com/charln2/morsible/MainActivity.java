@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -25,10 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String LOG_TAG = "MainActivity";
+    private static final String LOG_TAG = MainActivity.class.getSimpleName()+"text";
     private static final int RC_SIGN_IN = 1;
-
-    //TODO: move logic to Layout
 
     //Firebase
     private DatabaseReference mSessionRef;
@@ -39,10 +38,10 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
 
     //UI
-    List<User> users = new ArrayList<>();
+    List<FBPacket> users = new ArrayList<>();
     private User mUser; // user of application
     private ListView mUserListView;
-    private UserAdapter mUserAdapter;
+    private FBPacketAdapter mPacketAdapter;
 
     // Audio
     private MediaPlayer mp;
@@ -56,21 +55,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Init Database
+        // Database session
         mSessionRef = FirebaseDatabase.getInstance().getReference().child("session");
 
+        Log.v(LOG_TAG, "got session ref");
+        // Authentication
         initAuthentication();
 
         // Audio
         initAudio();
-
-        // UI
-        // TODO: Move logic to User object
-        mUser = new User(this, mSessionRef);
-
+        // UI content
         mUserListView = (ListView) findViewById(R.id.userListView);
-        mUserAdapter = new UserAdapter(this, R.layout.item_user, users);
-        mUserListView.setAdapter(mUserAdapter);
+        mPacketAdapter = new FBPacketAdapter(this, R.layout.item_user, users);
+        mUserListView.setAdapter(mPacketAdapter);
+
+        mUser = new User(this, mSessionRef, mPacketAdapter);
     }
 
     /**
@@ -78,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
      * objects.
      */
     private void initAuthentication() {
+        Log.v(LOG_TAG,"authenticating");
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -85,9 +85,11 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // Already signed in
+                    Log.v(LOG_TAG, "signed in");
                     onSignedInInit(user.getDisplayName());
                 } else {
                     // User is signed out
+                    Log.v(LOG_TAG, "signed out");
                     onSignedOutCleanup();
                     startActivityForResult(
                             AuthUI.getInstance()
@@ -104,17 +106,23 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    /**
+     * Sets up the app for the logged in user, giving one db reference to the User object.
+     * @param userName
+     */
     private void onSignedInInit(String userName) {
+        Log.v(LOG_TAG, "onSignedInInit");
         mUser.setUserName(userName);
-        mUserRef = mSessionRef.child(userName);
-        mUser.setDBRef(mUserRef);
+        Log.v(LOG_TAG, "user = " + mUser.toString());
+//        mUserRef = mSessionRef.child(userName);
+//        mUser.setDBRef(mUserRef);
         attachDBRefListener();
     }
 
     private void onSignedOutCleanup() {
+        Log.v(LOG_TAG, "onSignedOutCleanup");
         detachDBRefListener();
-        if (mUserRef != null)
-            mUserRef.removeValue();
+        mUser.removeFBRef();
     }
 
     private void initAudio() {
@@ -173,9 +181,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mPacketAdapter.clear();
         mAuth.addAuthStateListener(mAuthListener);
+//        attachDBRefListener();
         acquireMediaPlayer();
-        mUserAdapter.clear();
     }
 
     @Override
@@ -186,8 +195,7 @@ public class MainActivity extends AppCompatActivity {
 //            mAuthListener = null; DON'T DO THIS
         }
         detachDBRefListener();
-        if (mUserRef != null)
-            mUserRef.removeValue();
+        mUser.removeFBRef();
     }
 
     @Override
@@ -201,23 +209,29 @@ public class MainActivity extends AppCompatActivity {
             mChildEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    User aUser = dataSnapshot.getValue(User.class);
-                    mUserAdapter.add(aUser);
+                    FBPacket fbPack = dataSnapshot.getValue(FBPacket.class);
+                    mPacketAdapter.add(fbPack);
+                    mPacketAdapter.notifyDataSetChanged();
                 }
 
                 public void onChildRemoved(DataSnapshot dataSnapshot) {
-                    User aUser = dataSnapshot.getValue(User.class);
-                    mUserAdapter.remove(aUser);
+                    FBPacket fbPack = dataSnapshot.getValue(FBPacket.class);
+                    mPacketAdapter.remove(fbPack);
+                    mPacketAdapter.notifyDataSetChanged();
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                    User aUser = dataSnapshot.getValue(User.class);
-                    int i = mUserAdapter.getPosition(aUser);
-                    mUserAdapter.getItem(i).updateValues(aUser);
-                    mUserAdapter.notifyDataSetChanged();
+                    FBPacket fbPack = dataSnapshot.getValue(FBPacket.class);
+                    int i = mPacketAdapter.getPosition(fbPack);
+                    if (i > -1) {
+                        mPacketAdapter.getItem(i).updateValues(fbPack);
+                        mPacketAdapter.notifyDataSetChanged();
+                    } else {
+                        Log.e(LOG_TAG, "Trouble retrieving child user from database");
+                    }
 
                     // Play tone if updated user button is active
-                    if (aUser.isButtonActivated()) {
+                    if (fbPack.isButtonActivated()) {
                         acquireMediaPlayer();
                         if (requestAudioFocus()) {
                             mp.start();

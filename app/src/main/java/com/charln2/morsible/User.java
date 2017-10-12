@@ -8,113 +8,127 @@ import com.google.firebase.database.DatabaseReference;
 public class User {
     private static final String LOG_TAG = User.class.getSimpleName();
 
-    private String userName;
-    private String key;
-    private boolean isButtonActivated;
-    private int soundId;
-    private String highlightColor;
+    private FBPacket fbPacket;
+
     private MorseInterpreter morseInterpreter;
-    private DatabaseReference mUserRef;
-    private StringBuilder message;
-    private String str;
+    private DatabaseReference mFBRef;
+
+    private StringBuilder messageBuilder;
+
+    private FBPacketAdapter adapter;
+//    private String str;
 
     private User() {
     } // do not allow instantiation of empty constructor
 
-    public User(Activity _activity) {
+    // Main Constructor
+    public User(Activity _activity, DatabaseReference sessionRef, FBPacketAdapter adapter) {
         morseInterpreter = new MorseInterpreter(_activity, this);
-        isButtonActivated = false;
-        soundId = R.raw.tone_600hz;
-        highlightColor = "#FFAA77";
-        message = new StringBuilder();
+        messageBuilder = new StringBuilder();
+        this.adapter = adapter;
+        this.fbPacket = new FBPacket(_activity);
+        this.mFBRef = sessionRef.push();
     }
 
-    public User(Activity _activity, DatabaseReference dbRef) {
-        this(_activity);
-        this.mUserRef = dbRef;
-    }
-
-    // copy constructor
-    public User(String key, boolean isButtonActivated, int soundId, String highlightColor, StringBuilder message) {
-        userName = "Anonymous";
-        this.key = key;
-        this.isButtonActivated = isButtonActivated;
-        this.soundId = soundId;
-        this.highlightColor = highlightColor;
-        this.message = message;
-        str = message.toString();
+    // Copy constructor
+    public User(User user) {
+        this.fbPacket = new FBPacket(user.isButtonActivated(), user.getHighlightColor(), user.getSoundId(), user.getMessageBuilder(), user.getKey());
+        this.fbPacket.setUserName(user.getUserName());
+        messageBuilder = new StringBuilder();
     }
 
     public String getUserName() {
-        return userName;
+        return fbPacket.getUserName();
     }
 
     public void setUserName(String userName) {
-        this.userName = userName;
+        fbPacket.setUserName(userName);
     }
 
     public boolean isButtonActivated() {
-        return isButtonActivated;
+        return fbPacket.isButtonActivated();
     }
 
     public void setButtonActivated(boolean buttonActivated) {
-        isButtonActivated = buttonActivated;
+        fbPacket.setButtonActivated(buttonActivated);
     }
 
     public int getSoundId() {
-        return soundId;
+        return fbPacket.getSoundId();
     }
 
     public void setSoundId(int soundId) {
-        this.soundId = soundId;
+        fbPacket.setSoundId(soundId);
     }
 
     public String getHighlightColor() {
-        return highlightColor;
+        return fbPacket.getHighlightColor();
     }
 
     public void setHighlightColor(String highlightColor) {
-        this.highlightColor = highlightColor;
+        fbPacket.setHighlightColor(highlightColor);
+    }
+
+    public void setMessageBuilder(StringBuilder messageBuilder) {
+        fbPacket.setMessage(messageBuilder.toString());
+    }
+
+    public String getMessageBuilder() {
+        return fbPacket.getMessage();
     }
 
     public void updateValues(User u) {
-        this.isButtonActivated = u.isButtonActivated;
-        this.soundId = u.soundId;
-        this.highlightColor = u.highlightColor;
-        //todo: message buffer
-        this.message = u.message;
+        fbPacket.setButtonActivated(u.isButtonActivated());
+        fbPacket.setSoundId(u.getSoundId());
+        fbPacket.setHighlightColor(u.getHighlightColor());
+        fbPacket.setMessage(u.getMessageBuilder());
+        this.messageBuilder = u.messageBuilder;
     }
 
     public void pushToFB() {
-        mUserRef.setValue(this); // update db val
-        Log.v("morsebuffer", message.toString());
+        mFBRef.setValue(fbPacket); // update db val
+        adapter.notifyDataSetChanged();
+//        mFBRef.child("messageBuilder").setValue(messageBuilder);
+        Log.v("morsebuffer", messageBuilder.toString());
     }
 
-    public void setDBRef(DatabaseReference dbRef) {
-        mUserRef = dbRef;
-        pushToFB();
+    public void removeFBRef() {
+        if (mFBRef != null) {
+            mFBRef.removeValue();
+        }
     }
+//    public void setDBRef(DatabaseReference dbRef) {
+//        mFBRef = dbRef;
+//        pushToFB();
+//    }
 
     public void append(String ch) {
-        message.append(ch);
+        messageBuilder.append(ch);
+        fbPacket.setMessage(messageBuilder.toString());
         pushToFB();
     }
 
-    @Override
-    public String toString() {
-        return "[user:" + userName +
-                "isActive:" + isButtonActivated +
-                " soundId:" + soundId +
-                " highlightColor:" + highlightColor +
-                " message: " + message + "]";
-    }
+//    @Override
+//    public String toString() {
+//        return "[user:" + fbPacket.us +
+//                "isActive:" + isButtonActivated +
+//                " soundId:" + soundId +
+//                " highlightColor:" + highlightColor +
+//                " messageBuilder: " + messageBuilder + "]";
+//    }
 
     @Override
     public boolean equals(Object obj) {
-        return this.userName.equals(((User) obj).getUserName());
+        return fbPacket.getUserName().equals(((User) obj).getUserName());
     }
 
     public void clearBuffer() {
-        message.setLength(0);
+        messageBuilder.setLength(0);
+        fbPacket.setMessage("");
+        pushToFB();
+    }
+
+    public String getKey() {
+        return fbPacket.getKey();
     }
 }

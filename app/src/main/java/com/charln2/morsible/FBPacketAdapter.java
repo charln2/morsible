@@ -13,11 +13,11 @@ import android.widget.TextView;
 
 import java.util.List;
 
-public class UserAdapter extends ArrayAdapter<User> {
+public class FBPacketAdapter extends ArrayAdapter<FBPacket> {
     private static final int BORDER_WIDTH = 16;
-    private final String TAG = "UserAdapter";
+    private final String TAG = "FBPacketAdapter";
 
-    public UserAdapter(Context context, int resource, List<User> objects) {
+    public FBPacketAdapter(Context context, int resource, List<FBPacket> objects) {
         super(context, resource, objects);
     }
 
@@ -27,22 +27,22 @@ public class UserAdapter extends ArrayAdapter<User> {
             convertView = ((Activity) getContext()).getLayoutInflater().inflate(R.layout.item_user, parent, false);
         }
 
-        TextView messageTextView = (TextView) convertView.findViewById(R.id.messageTextView);
         TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
+        TextView messageTextView = (TextView) convertView.findViewById(R.id.messageTextView);
 
-        User userBlock = getItem(position);
+        FBPacket fbPacket = getItem(position);
         GradientDrawable gd = (GradientDrawable) convertView.getBackground();
-        if (userBlock.isButtonActivated()) {
+        if (fbPacket.isButtonActivated()) {
 //            Log.d(TAG, "changing view color of user to active");
-            gd.setStroke(BORDER_WIDTH, Color.parseColor(userBlock.getHighlightColor()));
-        } else if (!userBlock.isButtonActivated()) {
+            gd.setStroke(BORDER_WIDTH, Color.parseColor(fbPacket.getHighlightColor()));
+        } else if (!fbPacket.isButtonActivated()) {
 //            Log.d(TAG, "changing view color of user to inactive");
             gd.setStroke(BORDER_WIDTH,
                     ContextCompat.getColor(getContext(), R.color.colorBorderDefault));
         }
-//        messageTextView.setText(message.getText());
-        nameTextView.setText(userBlock.getUserName());
-
+        messageTextView.setText(fbPacket.getMessage().trim());
+        nameTextView.setText(fbPacket.getUserName());
+//        notifyDataSetChanged();
         return convertView;
     }
 }
